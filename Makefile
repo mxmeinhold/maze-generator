@@ -41,7 +41,7 @@ D_FILES += $(D_DIR)/main
 MAIN = test.c
 EXEC = $(BUILD_DIR)/test
 
-LIBRARIES =
+LIBRARIES = -limg -lpng
 
 default: $(EXEC)
 
