@@ -1,6 +1,8 @@
 #ifndef MAZE_GEN_GENERATOR_H
 #define MAZE_GEN_GENERATOR_H
 
+#include "tree.h"
+
 #define MAZE_WALL '*'
 #define MAZE_SPACE '+'
 
@@ -8,6 +10,7 @@ struct maze {
     unsigned short rows;
     unsigned short cols;
     struct cell*** maze;
+    tree_t neigh_tree;
 };
 struct cell {
     short row;

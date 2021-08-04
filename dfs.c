@@ -3,8 +3,9 @@
 #include "tree.h"
 #include <stdlib.h> // malloc(), free(), rand()
 
-struct neigh* make_neigh(struct cell* left, struct cell* right) {
+struct neigh* make_neigh(tree_t neigh_tree, struct cell* left, struct cell* right) {
     struct neigh* neigh = malloc(sizeof(struct neigh));
+    tree_add(neigh_tree, neigh);
     neigh->wall = (short) MAZE_WALL;
     neigh->left = left;
     neigh->right = right;
@@ -31,6 +32,7 @@ struct maze* gen_maze(unsigned short rows, unsigned short cols, void (*relocate)
     for (short row = 0; row < out->rows; row++) {
         out->maze[row] = calloc(sizeof(struct cell*), cols);
     }
+    out->neigh_tree = new_tree(&basic_compare);
 
     // Fill it
     for (short r = 0; r < rows; r++) {
@@ -49,10 +51,10 @@ struct maze* gen_maze(unsigned short rows, unsigned short cols, void (*relocate)
     // We'll have to do the right and bottom edges still
     for (short r = 0; r < rows - 1; r++) {
         for (short c = 0; c < cols - 1; c++) {
-            struct neigh* down = make_neigh(out->maze[r][c], out->maze[r+1][c]);
+            struct neigh* down = make_neigh(out->neigh_tree, out->maze[r][c], out->maze[r+1][c]);
             out->maze[r+1][c]->neighs[out->maze[r+1][c]->num_neigh++] = down;
             out->maze[r][c]->neighs[out->maze[r][c]->num_neigh++] = down;
-            struct neigh* right = make_neigh(out->maze[r][c], out->maze[r][c+1]);
+            struct neigh* right = make_neigh(out->neigh_tree,out->maze[r][c], out->maze[r][c+1]);
             out->maze[r][c+1]->neighs[out->maze[r][c+1]->num_neigh++] = right;
             out->maze[r][c]->neighs[out->maze[r][c]->num_neigh++] = right;
         }
@@ -61,7 +63,7 @@ struct maze* gen_maze(unsigned short rows, unsigned short cols, void (*relocate)
     // Right edge
     for (short r = 0; r < rows - 1; r++) {
         short c = (short)cols - 1;
-        struct neigh* down = make_neigh(out->maze[r][c], out->maze[r+1][c]);
+        struct neigh* down = make_neigh(out->neigh_tree,out->maze[r][c], out->maze[r+1][c]);
         out->maze[r+1][c]->neighs[out->maze[r+1][c]->num_neigh++] = down;
         out->maze[r][c]->neighs[out->maze[r][c]->num_neigh++] = down;
     }
@@ -69,7 +71,7 @@ struct maze* gen_maze(unsigned short rows, unsigned short cols, void (*relocate)
     // Bottom edge
     for (short c = 0; c < cols - 1; c++) {
         short r = (short)rows - 1;
-        struct neigh* right = make_neigh(out->maze[r][c], out->maze[r][c+1]);
+        struct neigh* right = make_neigh(out->neigh_tree,out->maze[r][c], out->maze[r][c+1]);
         out->maze[r][c+1]->neighs[out->maze[r][c+1]->num_neigh++] = right;
         out->maze[r][c]->neighs[out->maze[r][c]->num_neigh++] = right;
     }
@@ -123,22 +125,19 @@ struct maze* gen_maze(unsigned short rows, unsigned short cols, void (*relocate)
 }
 
 void clean_maze(struct maze* input) {
-    tree_t tree = new_tree(&basic_compare);
     for (short r = 0; r < input->rows; r++) {
         for (short c = 0; c < input->cols; c++) {
             struct cell* node = input->maze[r][c];
-            for (int n = 0; n < node->num_neigh; n++) {
-                tree_add(tree, node->neighs[n]);
-            }
             free(node->neighs);
             free(node);
         }
         free(input->maze[r]);
     }
     free(input->maze);
-    free(input);
 
     void* data;
-    while ((data = tree_pop(tree)) != NULL) free(data);
-    tree_deallocate(tree);
+    while ((data = tree_pop(input->neigh_tree)) != NULL) free(data);
+    tree_deallocate(input->neigh_tree);
+
+    free(input);
 }
