@@ -23,6 +23,7 @@ struct tree* new_tree(compare_func_t compare) {
     return tree;
 }
 
+/*
 static struct tree_node* add(struct tree_node* node, void* data, compare_func_t compare) {
     if  (node == NULL) {
         struct tree_node* new_node = malloc(sizeof(struct tree_node));
@@ -45,7 +46,33 @@ static struct tree_node* add(struct tree_node* node, void* data, compare_func_t 
 void tree_add(struct tree* tree, void* data) {
     tree->root = add(tree->root, data, tree->compare);
 }
+*/
 
+// Iterative version
+void tree_add(struct tree* tree, void* data) {
+    struct tree_node* current = tree->root;
+    struct tree_node** last = &tree->root;
+    while (current != NULL) {
+        if (tree->compare(current->data, data) > 0) {
+            last = &current->left;
+            current = current->left;
+        } else if (tree->compare(current->data, data) < 0) {
+            last = &current->right;
+            current = current->right;
+        } else {
+            // Skip duplicates
+            return;
+        }
+    }
+
+    struct tree_node* new_node = malloc(sizeof(struct tree_node));
+    new_node->data = data;
+    new_node->left = NULL;
+    new_node->right = NULL;
+    *last = new_node;
+}
+
+/*
 static int contains(struct tree_node* node, void* data, compare_func_t compare) {
     if  (node == NULL) {
         return 0;
@@ -62,6 +89,23 @@ static int contains(struct tree_node* node, void* data, compare_func_t compare) 
 
 int tree_contains(struct tree* tree, void* data) {
     return contains(tree->root, data, tree->compare);
+}
+*/
+
+// Iterative version
+int tree_contains(struct tree* tree, void* data) {
+    struct tree_node* current = tree->root;
+    while (current != NULL) {
+        if (tree->compare(current->data, data) == 0) {
+            return 1;
+        } else if (tree->compare(current->data, data) > 0) {
+           current = current->left;
+        } else {
+           current = current->right;
+        }
+    }
+
+    return 0;
 }
 
 static void deallocate(struct tree_node* node) {
@@ -83,6 +127,7 @@ intmax_t basic_compare(const void* self, const void* other) {
     return ((intmax_t) self) - ((intmax_t) other);
 }
 
+/*
 void* pop(struct tree_node* node) {
     if (node->left != NULL) {
         void* data = pop(node->left);
@@ -115,4 +160,27 @@ void* tree_pop(tree_t tree) {
         tree->root = NULL;
     }
     return data;
+}
+*/
+
+// Iterative version
+void* tree_pop(tree_t tree) {
+    struct tree_node* current = tree->root;
+    struct tree_node** last = &tree->root;
+    while (current != NULL) {
+        if (current->left != NULL) {
+            last = &current->left;
+            current = current->left;
+        } else if (current->right != NULL) {
+            last = &current->right;
+            current = current->right;
+        } else {
+            void* data = current->data;
+            free(current);
+            *last = NULL;
+            return data;
+        }
+    }
+
+    return NULL;
 }
