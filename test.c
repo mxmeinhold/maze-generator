@@ -64,18 +64,12 @@ int main(void) {
             img.rows[cell->row][cell->col].red = 255;
             img.rows[cell->row][cell->col].green = 255;
             img.rows[cell->row][cell->col].blue = 255;
-            for (short n = 0; n < cell->num_neigh; n++) {
-                int row = cell->neighs[n]->row;
-                int col = cell->neighs[n]->col;
-                if (cell->neighs[n]->wall == MAZE_SPACE) {
-                    img.rows[row][col].red = 255;
-                    img.rows[row][col].green = 255;
-                    img.rows[row][col].blue = 255;
-                } else {
-                    img.rows[row][col].red = 0;
-                    img.rows[row][col].green = 0;
-                    img.rows[row][col].blue = 0;
-                }
+            for (struct list_node* path = cell->paths.start; path != NULL; path = path->next) {
+                int row = path->cell->row + (cell->row - path->cell->row) / 2;
+                int col = path->cell->col + (cell->col - path->cell->col) / 2;
+                img.rows[row][col].red = 255;
+                img.rows[row][col].green = 255;
+                img.rows[row][col].blue = 255;
             }
         }
     }
