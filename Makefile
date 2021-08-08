@@ -38,8 +38,8 @@ D_DIR = $(BUILD_DIR)/d
 D_FILES = $(patsubst %.o,$(D_DIR)/%.d,$(_O_FILES))
 D_FILES += $(D_DIR)/main
 
-MAIN = test.c
-EXEC = $(BUILD_DIR)/test
+MAIN = maze.c
+EXEC = $(BUILD_DIR)/maze
 
 LIBRARIES = -limg -lpng
 

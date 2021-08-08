@@ -203,25 +203,6 @@ int main(const int argc, const char** argv) {
     parse_args(&args, argc, argv);
     srand(args.seed);
 
-    stack_t stack = new_stack();
-    stack_push(stack, (void*)"1");
-    stack_push(stack, (void*)"2");
-    stack_push(stack, (void*)"3");
-    while (stack_peek(stack)) {
-        printf("stack: %s\n", (char*)stack_pop(stack));
-    }
-    stack_deallocate(stack);
-
-    tree_t tree = new_tree(&strcompare);
-    tree_add(tree, (void*)"2");
-    tree_add(tree, (void*)"1");
-    tree_add(tree, (void*)"3");
-    char* current;
-    while ((current = tree_pop(tree)) != NULL) {
-        printf("tree: %s\n", current);
-    }
-    tree_deallocate(tree);
-
     struct maze* maze = gen_maze(args.rows, args.cols, &relocate);
 
     struct img img;
