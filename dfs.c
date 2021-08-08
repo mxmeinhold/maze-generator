@@ -40,19 +40,19 @@ static void shuffle(struct linked_list* list) {
     }
 }
 
-struct maze* gen_maze(unsigned short rows, unsigned short cols, void (*relocate)(struct cell*)) {
+struct maze* gen_maze(unsigned long rows, unsigned long cols, void (*relocate)(struct cell*)) {
     // Init a grid
     struct maze* out = malloc(sizeof(struct maze));
     out->rows = rows;
     out->cols = cols;
     out->maze = calloc(sizeof(struct cell**), rows);
-    for (short row = 0; row < out->rows; row++) {
+    for (unsigned long row = 0; row < out->rows; row++) {
         out->maze[row] = calloc(sizeof(struct cell*), cols);
     }
 
     // Fill it
-    for (short r = 0; r < rows; r++) {
-        for (short c = 0; c < cols; c++) {
+    for (unsigned long r = 0; r < rows; r++) {
+        for (unsigned long c = 0; c < cols; c++) {
             struct cell* new = malloc(sizeof(struct cell));
             out->maze[r][c] = new;
             new->row = r;
@@ -67,8 +67,8 @@ struct maze* gen_maze(unsigned short rows, unsigned short cols, void (*relocate)
 
     // Link neighbors (only to the right and down)
     // We'll have to do the right and bottom edges still
-    for (short r = 0; r < rows - 1; r++) {
-        for (short c = 0; c < cols - 1; c++) {
+    for (unsigned long r = 0; r < rows - 1; r++) {
+        for (unsigned long c = 0; c < cols - 1; c++) {
             struct cell* current = out->maze[r][c];
             struct cell* down = out->maze[r+1][c];
             list_push(&current->walls, down);
@@ -81,8 +81,8 @@ struct maze* gen_maze(unsigned short rows, unsigned short cols, void (*relocate)
     }
 
     // Right edge
-    for (short r = 0; r < rows - 1; r++) {
-        short c = (short)cols - 1;
+    for (unsigned long r = 0; r < rows - 1; r++) {
+        unsigned long c = cols - 1;
         struct cell* current = out->maze[r][c];
         struct cell* down = out->maze[r+1][c];
         list_push(&current->walls, down);
@@ -90,16 +90,16 @@ struct maze* gen_maze(unsigned short rows, unsigned short cols, void (*relocate)
     }
 
     // Bottom edge
-    for (short c = 0; c < cols - 1; c++) {
-        short r = (short)rows - 1;
+    for (unsigned long c = 0; c < cols - 1; c++) {
+        unsigned long r = rows - 1;
         struct cell* current = out->maze[r][c];
         struct cell* right = out->maze[r][c+1];
         list_push(&current->walls, right);
         list_push(&right->walls, current);
     }
 
-    for (short r = 0; r < rows; r++) {
-        for (short c = 0; c < cols; c++) {
+    for (unsigned long r = 0; r < rows; r++) {
+        for (unsigned long c = 0; c < cols; c++) {
             struct cell* n = out->maze[r][c];
             // Randomize walls
             shuffle(&n->walls);
@@ -112,7 +112,7 @@ struct maze* gen_maze(unsigned short rows, unsigned short cols, void (*relocate)
 
     // pick a random cell
     // TODO save and return this? something something the maze is a tree?
-    struct cell* node = out->maze[rand() % out->rows][rand() % out->cols];
+    struct cell* node = out->maze[(unsigned long)rand() % out->rows][(unsigned long)rand() % out->cols];
     // mark visited
     tree_add(visited_tree, (void*)node);
     // push to stack
@@ -148,8 +148,8 @@ struct maze* gen_maze(unsigned short rows, unsigned short cols, void (*relocate)
 }
 
 void clean_maze(struct maze* input) {
-    for (short r = 0; r < input->rows; r++) {
-        for (short c = 0; c < input->cols; c++) {
+    for (unsigned long r = 0; r < input->rows; r++) {
+        for (unsigned long c = 0; c < input->cols; c++) {
             struct cell* node = input->maze[r][c];
             list_deallocate(&node->walls);
             list_deallocate(&node->paths);

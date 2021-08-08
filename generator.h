@@ -26,15 +26,15 @@ void list_remove_data(struct linked_list* list, struct cell* cell);
 void list_deallocate(struct linked_list* list);
 
 struct maze {
-    unsigned short rows;
-    unsigned short cols;
+    unsigned long rows;
+    unsigned long cols;
     struct cell*** maze;
     tree_t neigh_tree;
 };
 
 struct cell {
-    short row;
-    short col;
+    unsigned long row;
+    unsigned long col;
     short num_wall;
     struct linked_list walls;
     short num_path;
@@ -44,7 +44,7 @@ struct cell {
 #define NUM_NEIGH 4
 
 // allocates and fills a maze pointer
-struct maze* gen_maze(unsigned short rows, unsigned short cols, void (*relocate)(struct cell*));
+struct maze* gen_maze(unsigned long rows, unsigned long cols, void (*relocate)(struct cell*));
 
 // deconstructs and frees the given maze pointer
 void clean_maze(struct maze* input);
