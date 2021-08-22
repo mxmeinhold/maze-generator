@@ -5,7 +5,7 @@
 #include <stdint.h> // intmax_t
 #include <img.h>
 #include <stdlib.h> // calloc(), srand(), atexit()
-#include <string.h> // strcmp()
+#include <string.h> // strcmp(), strstr()
 #include <time.h>   // time()
 
 #include "format.h" // ANSI formatting escape sequences
@@ -15,8 +15,11 @@
 
 // Size used if not specified by flags
 #define DEFAULT_SIZE 50
-// Default output path
+// Default output path and format
 #define DEFAULT_OUTFILE "maze.png"
+#define DEFAULT_OUT_FORMAT "png"
+#define VALID_OUT_FORMATS "{png|text}"
+
 #define DEFAULT_SEED time(0)
 
 /** The usage message */
@@ -24,7 +27,7 @@ char* usage;
 
 /** Arguments for the usage message */
 static const char* args_doc =
-    "[-h] [--size size] [--rows num_rows] [--cols num_cols] [--seed seed] [-f output_path]";
+    "[-h] [--size size] [--rows num_rows] [--cols num_cols] [--seed seed] [-f output_path] [--format "VALID_OUT_FORMATS"]";
 
 /** Help message, much more detailed than usage, and with pretty formatting */
 static const char* help = BOLD "Options" INTENSITY_RESET "\n"
@@ -33,7 +36,8 @@ TAB BOLD"--size"INTENSITY_RESET" "UNDERLINE"size"UNDERLINE_OFF":\n"TAB TAB"creat
 TAB BOLD"--rows"INTENSITY_RESET" "UNDERLINE"num_rows"UNDERLINE_OFF":\n"TAB TAB"sets the maze size to "UNDERLINE"num_rows"UNDERLINE_OFF" rows\n"
 TAB BOLD"--cols"INTENSITY_RESET" "UNDERLINE"num_cols"UNDERLINE_OFF":\n"TAB TAB"sets the maze size to "UNDERLINE"num_cols"UNDERLINE_OFF" columns\n"
 TAB BOLD"--seed"INTENSITY_RESET" "UNDERLINE"seed"UNDERLINE_OFF":\n"TAB TAB"specify a seed for the random number generator\n"
-TAB BOLD"-f"INTENSITY_RESET" "UNDERLINE"output_path"UNDERLINE_OFF":\n"TAB TAB"where to write the maze png to. default: "STRINGIFY(DEFAULT_OUTFILE)"\n";
+TAB BOLD"-f"INTENSITY_RESET" "UNDERLINE"output_path"UNDERLINE_OFF":\n"TAB TAB"where to write the maze png to. default: "STRINGIFY(DEFAULT_OUTFILE)"\n"
+TAB BOLD"--format"INTENSITY_RESET" "UNDERLINE""VALID_OUT_FORMATS""UNDERLINE_OFF":\n"TAB TAB"what format to use when writing to the output default: "STRINGIFY(DEFAULT_OUT_FORMAT)"\n";
 
 /** Arguments struct  */
 struct arguments {
@@ -45,6 +49,8 @@ struct arguments {
     unsigned int seed;
     /** Out file name */
     const char* out_file;
+    /** Out format */
+    const char* out_format;
     /** Exit immediately flag */
     volatile short exit;
 };
@@ -129,6 +135,7 @@ static int parse_args(
 
     // Setup some defaults
     args_p->out_file = DEFAULT_OUTFILE;
+    args_p->out_format = DEFAULT_OUT_FORMAT;
     args_p->seed = (unsigned int) DEFAULT_SEED;
 
     // If any arg is -h, print help and exit
@@ -176,6 +183,12 @@ static int parse_args(
                 args_p->out_file = argv[++i];
             } else if (strncmp(argv[i], "--seed", 6) == 0) {
                args_p->seed = hash_string((unsigned const char*)argv[++i]);
+            } else if (strncmp(argv[i], "--format", 8) == 0) {
+               args_p->out_format = argv[++i];
+               // Verify it's valid
+               if (strstr(VALID_OUT_FORMATS, args_p->out_format) == NULL) {
+                    fprintf(stderr, "Error: `%s` is a ", args_p->out_format);
+               }
             }
         }
     }
@@ -194,20 +207,11 @@ void cleanup(void) {
     free(usage);
 }
 
-int main(const int argc, const char** argv) {
-    atexit(cleanup);
-
-    usage = get_usage(argc, argv);
-
-    struct arguments args;
-    parse_args(&args, argc, argv);
-    srand(args.seed);
-
-    struct maze* maze = gen_maze(args.rows, args.cols, &relocate);
-
+/** write the maze as a png */
+void write_maze_png(const struct maze* maze, struct arguments* args) {
     struct img img;
-    img.width = (int) (2 * args.rows + 1);
-    img.height = (int) (2 * args.cols + 1);
+    img.width = (int) (2 * args->rows + 1);
+    img.height = (int) (2 * args->cols + 1);
     img.rows = calloc(sizeof(struct pixel*), (size_t)img.height);
     for (int r = 0; r < img.height; r++) {
         img.rows[r] = calloc(sizeof(struct pixel), (size_t)img.width);
@@ -234,12 +238,70 @@ int main(const int argc, const char** argv) {
             }
         }
     }
-    writepng(args.out_file, &img);
-    clean_maze(maze);
+    writepng(args->out_file, &img);
 
     // Free the image
     for (int r = 0; r < img.height; r++) free(img.rows[r]);
     free(img.rows);
+}
+
+/** write the maze as a plaintext file, using ' ' for paths and '#' for walls */
+void write_maze_text(const struct maze* maze, struct arguments* args) {
+    FILE* file = fopen(args->out_file, "w+");
+
+    int height = (int) (2 * args->rows + 1);
+    int width = (int) (2 * args->cols + 1);
+    char** rows = calloc(sizeof(char*), (size_t)height);
+    for (int r = 0; r < height; r++) {
+        rows[r] = calloc(sizeof(char), (size_t)width);
+        for (int c = 0; c < width; c++) {
+            // It might be a wall. More on that later.
+            rows[r][c] = '#';
+        }
+    }
+
+    for (unsigned short r = 0; r < maze->rows; r++) {
+        for (unsigned short c = 0; c < maze->cols; c++) {
+            struct cell* cell = maze->maze[r][c];
+            rows[cell->row][cell->col] = ' ';
+            for (struct list_node* path = cell->paths.start; path != NULL; path = path->next) {
+                long row = (long) path->cell->row + ((long)cell->row - (long)path->cell->row) / 2;
+                long col = (long) path->cell->col + ((long)cell->col - (long)path->cell->col) / 2;
+                rows[row][col] = ' ';
+            }
+        }
+    }
+
+    // Actually write out the maze
+    for (int r = 0; r < height; r++) {
+        for (int c = 0; c < width; c++) {
+            fputc(rows[r][c], file);
+        }
+        fputc('\n', file);
+    }
+
+    // Free the buffer
+    for (int r = 0; r < height; r++) free(rows[r]);
+    free(rows);
+}
+
+int main(const int argc, const char** argv) {
+    atexit(cleanup);
+
+    usage = get_usage(argc, argv);
+
+    struct arguments args;
+    parse_args(&args, argc, argv);
+    srand(args.seed);
+
+    struct maze* maze = gen_maze(args.rows, args.cols, &relocate);
+
+    if (strcmp("png", args.out_format) == 0)
+        write_maze_png(maze, &args);
+    else if (strcmp("text", args.out_format) == 0)
+        write_maze_text(maze, &args);
+
+    clean_maze(maze);
 
     return 0;
 }
