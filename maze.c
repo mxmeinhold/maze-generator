@@ -210,8 +210,8 @@ void cleanup(void) {
 /** write the maze as a png */
 void write_maze_png(const struct maze* maze, struct arguments* args) {
     struct img img;
-    img.width = (int) (2 * args->rows + 1);
-    img.height = (int) (2 * args->cols + 1);
+    img.height = (int) (2 * args->rows + 1);
+    img.width = (int) (2 * args->cols + 1);
     img.rows = calloc(sizeof(struct pixel*), (size_t)img.height);
     for (int r = 0; r < img.height; r++) {
         img.rows[r] = calloc(sizeof(struct pixel), (size_t)img.width);
