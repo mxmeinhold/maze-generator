@@ -1,9 +1,7 @@
 #include <img.h>
 #include <stdlib.h> // free(), calloc()
 
-#define WALL '#'
-#define SPACE ' '
-#define PATH '*'
+#include "text-format.h"
 
 // argv[0]: input text file
 // argv[1]: output png file

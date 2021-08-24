@@ -44,8 +44,9 @@ LIBRARIES = -limg -lpng16 -lz -lm
 
 MAZE_EXEC = $(BUILD_DIR)/maze
 TXT_TO_PNG_EXEC = $(BUILD_DIR)/txt-to-png
+PNG_TO_TXT_EXEC = $(BUILD_DIR)/png-to-txt
 
-EXECS = $(MAZE_EXEC) $(TXT_TO_PNG_EXEC)
+EXECS = $(MAZE_EXEC) $(TXT_TO_PNG_EXEC) $(PNG_TO_TXT_EXEC)
 
 default: $(EXECS)
 
@@ -55,6 +56,10 @@ $(MAZE_EXEC): $(patsubst %.o,$(O_DIR)/%.o,$(MAZE_O_FILES))
 
 TXT_TO_PNG_O_FILES = txt-to-png.o
 $(TXT_TO_PNG_EXEC): $(patsubst %.o,$(O_DIR)/%.o,$(TXT_TO_PNG_O_FILES))
+	$(CC) -fPIC -o $@ $^ $(CFLAGS) $(WARNINGS) $(LIBRARIES)
+
+PNG_TO_TXT_O_FILES = png-to-txt.o
+$(PNG_TO_TXT_EXEC): $(patsubst %.o,$(O_DIR)/%.o,$(PNG_TO_TXT_O_FILES))
 	$(CC) -fPIC -o $@ $^ $(CFLAGS) $(WARNINGS) $(LIBRARIES)
 
 
@@ -90,9 +95,9 @@ $(MAZE_DIR)/maze.%: $(MAZE_EXEC)
 
 # Analysis
 .PHONY: analyze
-analyze: maze.analyze txt-to-png.analyze
+analyze: maze.analyze txt-to-png.analyze png-to-txt.analyze
 
-maze.analyze txt-to-png.analyze: %.analyze: $(ANALYSIS_DIR)/memcheck.%.out $(ANALYSIS_DIR)/callgrind.%.out $(ANALYSIS_DIR)/callgrind.%.png
+maze.analyze txt-to-png.analyze png-to-txt.analyze: %.analyze: $(ANALYSIS_DIR)/memcheck.%.out $(ANALYSIS_DIR)/callgrind.%.out $(ANALYSIS_DIR)/callgrind.%.png
 
 $(ANALYSIS_DIR)/maze.test_args:
 	@mkdir -p $(@D)
@@ -102,6 +107,10 @@ $(ANALYSIS_DIR)/maze.test_args:
 $(ANALYSIS_DIR)/txt-to-png.test_args: $(MAZE_DIR)/maze.text
 	@mkdir -p $(@D)
 	echo "$(MAZE_DIR)/maze.text $(MAZE_DIR)/maze.txt-to-png.png" > $@
+
+$(ANALYSIS_DIR)/png-to-txt.test_args: $(MAZE_DIR)/maze.png
+	@mkdir -p $(@D)
+	echo "$(MAZE_DIR)/maze.png $(MAZE_DIR)/maze.png-to-txt.text " > $@
 
 $(ANALYSIS_DIR)/%.test_args:
 	@mkdir -p $(@D)
