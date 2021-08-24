@@ -1,6 +1,5 @@
 #include "generator.h"
 #include "stack.h"
-#include "tree.h"
 #include <stdlib.h> // malloc(), free(), rand()
 
 static void shuffle(struct linked_list* list) {
@@ -61,6 +60,7 @@ struct maze* gen_maze(unsigned long rows, unsigned long cols, void (*relocate)(s
             new->walls.start = NULL;
             new->paths.end = NULL;
             new->paths.start = NULL;
+            new->visited = 0;
             relocate(new);// Ugh TODO
         }
     }
@@ -108,13 +108,12 @@ struct maze* gen_maze(unsigned long rows, unsigned long cols, void (*relocate)(s
 
     // Create a maze
     stack_t stack = new_stack();
-    tree_t visited_tree = new_tree(&basic_compare);
 
     // pick a random cell
     // TODO save and return this? something something the maze is a tree?
     struct cell* node = out->maze[(unsigned long)rand() % out->rows][(unsigned long)rand() % out->cols];
     // mark visited
-    tree_add(visited_tree, (void*)node);
+    node->visited = 1;
     // push to stack
     intmax_t stack_size = 0;
     stack_push(stack, node); stack_size++;
@@ -125,7 +124,7 @@ struct maze* gen_maze(unsigned long rows, unsigned long cols, void (*relocate)(s
         struct list_node* wall = node->walls.start;
         for (; wall != NULL;) {
             struct list_node* next = wall->next;
-            if (!tree_contains(visited_tree, (void*)wall->cell)) {
+            if (!wall->cell->visited) {
                 stack_push(stack, node); stack_size++;
                 // remove the wall
                 list_remove(&node->walls, wall);
@@ -134,7 +133,7 @@ struct maze* gen_maze(unsigned long rows, unsigned long cols, void (*relocate)(s
                 node->paths.start = wall;
                 if (node->paths.end == NULL) node->paths.end = wall;
                 // mark as visited and push to stack
-                tree_add(visited_tree, (void*)wall->cell);
+                wall->cell->visited = 1;
                 stack_push(stack, wall->cell); stack_size++;
                 break;
             }
@@ -142,7 +141,6 @@ struct maze* gen_maze(unsigned long rows, unsigned long cols, void (*relocate)(s
         }
     }
 
-    tree_deallocate(visited_tree);
     stack_deallocate(stack);
     return out;
 }

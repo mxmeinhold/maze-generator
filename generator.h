@@ -39,6 +39,7 @@ struct cell {
     struct linked_list walls;
     short num_path;
     struct linked_list paths;
+    char visited;
 };
 
 #define NUM_NEIGH 4
