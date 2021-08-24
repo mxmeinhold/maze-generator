@@ -37,7 +37,8 @@ TAB BOLD"--rows"INTENSITY_RESET" "UNDERLINE"num_rows"UNDERLINE_OFF":\n"TAB TAB"s
 TAB BOLD"--cols"INTENSITY_RESET" "UNDERLINE"num_cols"UNDERLINE_OFF":\n"TAB TAB"sets the maze size to "UNDERLINE"num_cols"UNDERLINE_OFF" columns\n"
 TAB BOLD"--seed"INTENSITY_RESET" "UNDERLINE"seed"UNDERLINE_OFF":\n"TAB TAB"specify a seed for the random number generator\n"
 TAB BOLD"-f"INTENSITY_RESET" "UNDERLINE"output_path"UNDERLINE_OFF":\n"TAB TAB"where to write the maze png to. default: "STRINGIFY(DEFAULT_OUTFILE)"\n"
-TAB BOLD"--format"INTENSITY_RESET" "UNDERLINE""VALID_OUT_FORMATS""UNDERLINE_OFF":\n"TAB TAB"what format to use when writing to the output default: "STRINGIFY(DEFAULT_OUT_FORMAT)"\n";
+TAB BOLD"--format"INTENSITY_RESET" "UNDERLINE""VALID_OUT_FORMATS""UNDERLINE_OFF":\n"TAB TAB"what format to use when writing to the output default: "STRINGIFY(DEFAULT_OUT_FORMAT)"\n"
+TAB BOLD"--print-valid-formats"INTENSITY_RESET":\n"TAB TAB"print the valid format strings, one per line, and exit\n";
 
 /** Arguments struct  */
 struct arguments {
@@ -143,6 +144,10 @@ static int parse_args(
         for (int i = 0; i < argc; i++) {
             if (strncmp("-h", argv[i], 2) == 0) {
                 printf("%s\n%s", usage,  help);
+                exit(0);
+            } else if (strncmp("--print-valid-formats", argv[i], 21) == 0) {
+                printf("png\n");
+                printf("text\n");
                 exit(0);
             }
         }
