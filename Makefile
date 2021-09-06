@@ -74,7 +74,7 @@ $(D_DIR)/%.d: %.c
 
 .PHONY: run
 run: $(MAZE_EXEC)
-	./$(MAZE_EXEC)
+	./$(MAZE_EXEC) --size 10
 
 VALGRIND_DEP = $(BUILD_DIR)/.valgrind
 $(VALGRIND_DEP):
@@ -133,6 +133,8 @@ $(ANALYSIS_DIR)/callgrind.%.png: $(ANALYSIS_DIR)/callgrind.%.out
 
 .PHONY: watch
 watch: run
+	make run; \
+	feh -Z --force-aliasing maze.png & \
 	while true; do \
 		clear; \
 		make run || true; \
