@@ -27,7 +27,7 @@ char* usage;
 
 /** Arguments for the usage message */
 static const char* args_doc =
-    "[-h] [--size size] [--rows num_rows] [--cols num_cols] [--seed seed] [-f output_path] [--format "VALID_OUT_FORMATS"]";
+    "[-h] [--size size] [--rows num_rows] [--cols num_cols] [--seed seed] [--path-len length] [-f output_path] [--format "VALID_OUT_FORMATS"]";
 
 /** Help message, much more detailed than usage, and with pretty formatting */
 static const char* help = BOLD "Options" INTENSITY_RESET "\n"
@@ -36,6 +36,7 @@ TAB BOLD"--size"INTENSITY_RESET" "UNDERLINE"size"UNDERLINE_OFF":\n"TAB TAB"creat
 TAB BOLD"--rows"INTENSITY_RESET" "UNDERLINE"num_rows"UNDERLINE_OFF":\n"TAB TAB"sets the maze size to "UNDERLINE"num_rows"UNDERLINE_OFF" rows\n"
 TAB BOLD"--cols"INTENSITY_RESET" "UNDERLINE"num_cols"UNDERLINE_OFF":\n"TAB TAB"sets the maze size to "UNDERLINE"num_cols"UNDERLINE_OFF" columns\n"
 TAB BOLD"--seed"INTENSITY_RESET" "UNDERLINE"seed"UNDERLINE_OFF":\n"TAB TAB"specify a seed for the random number generator\n"
+TAB BOLD"--path-len"INTENSITY_RESET" "UNDERLINE"length"UNDERLINE_OFF":\n"TAB TAB"limit the length of the path.  default: no limit (0)\n"
 TAB BOLD"-f"INTENSITY_RESET" "UNDERLINE"output_path"UNDERLINE_OFF":\n"TAB TAB"where to write the maze png to. default: "STRINGIFY(DEFAULT_OUTFILE)"\n"
 TAB BOLD"--format"INTENSITY_RESET" "UNDERLINE""VALID_OUT_FORMATS""UNDERLINE_OFF":\n"TAB TAB"what format to use when writing to the output default: "STRINGIFY(DEFAULT_OUT_FORMAT)"\n"
 TAB BOLD"--print-valid-formats"INTENSITY_RESET":\n"TAB TAB"print the valid format strings, one per line, and exit\n";
@@ -48,6 +49,8 @@ struct arguments {
     unsigned long cols;
     /** Seed to control rng */
     unsigned int seed;
+    /** Path length limit */
+    unsigned long limit;
     /** Out file name */
     const char* out_file;
     /** Out format */
@@ -138,6 +141,7 @@ static int parse_args(
     args_p->out_file = DEFAULT_OUTFILE;
     args_p->out_format = DEFAULT_OUT_FORMAT;
     args_p->seed = (unsigned int) DEFAULT_SEED;
+    args_p->limit = 0; // No limit
 
     // If any arg is -h, print help and exit
     if (argc  >= 2) {
@@ -188,6 +192,13 @@ static int parse_args(
                 args_p->out_file = argv[++i];
             } else if (strncmp(argv[i], "--seed", 6) == 0) {
                args_p->seed = hash_string((unsigned const char*)argv[++i]);
+            } else if (strncmp(argv[i], "--path_len", 10) == 0) {
+                args_p->limit = strtoul(argv[++i], &endptr, 10);
+                if (*endptr != '\0') {
+                    fprintf(stderr, "Error: `%s` is not a valid argument for "
+                            "--limit (must be a positive integer or 0)\n", argv[i]);
+                    return 2; // User gave bad values
+                }
             } else if (strncmp(argv[i], "--format", 8) == 0) {
                args_p->out_format = argv[++i];
                // Verify it's valid
@@ -231,6 +242,7 @@ void write_maze_png(const struct maze* maze, struct arguments* args) {
     for (unsigned short r = 0; r < maze->rows; r++) {
         for (unsigned short c = 0; c < maze->cols; c++) {
             struct cell* cell = maze->maze[r][c];
+            if (!cell->visited) continue;
             img.rows[cell->row][cell->col].red = 255;
             img.rows[cell->row][cell->col].green = 255;
             img.rows[cell->row][cell->col].blue = 255;
@@ -299,7 +311,7 @@ int main(const int argc, const char** argv) {
     parse_args(&args, argc, argv);
     srand(args.seed);
 
-    struct maze* maze = gen_maze(args.rows, args.cols, &relocate);
+    struct maze* maze = gen_maze(args.rows, args.cols, &relocate, args.limit);
 
     if (strcmp("png", args.out_format) == 0)
         write_maze_png(maze, &args);

@@ -39,7 +39,7 @@ static void shuffle(struct linked_list* list) {
     }
 }
 
-struct maze* gen_maze(unsigned long rows, unsigned long cols, void (*relocate)(struct cell*)) {
+struct maze* gen_maze(unsigned long rows, unsigned long cols, void (*relocate)(struct cell*), unsigned long limit) {
     // Init a grid
     struct maze* out = malloc(sizeof(struct maze));
     out->rows = rows;
@@ -109,6 +109,7 @@ struct maze* gen_maze(unsigned long rows, unsigned long cols, void (*relocate)(s
     // Create a maze
     stack_t stack = new_stack();
 
+    unsigned long len = 0;
     // pick a random cell
     // TODO save and return this? something something the maze is a tree?
     struct cell* node = out->maze[(unsigned long)rand() % out->rows][(unsigned long)rand() % out->cols];
@@ -118,6 +119,7 @@ struct maze* gen_maze(unsigned long rows, unsigned long cols, void (*relocate)(s
     intmax_t stack_size = 0;
     stack_push(stack, node); stack_size++;
     while (stack_peek(stack)) {
+        if (limit && len++ >= limit) break;
         // pop
         node = (struct cell*) stack_pop(stack); stack_size--;
         // pick an unvisited neighbor

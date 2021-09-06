@@ -45,7 +45,7 @@ struct cell {
 #define NUM_NEIGH 4
 
 // allocates and fills a maze pointer
-struct maze* gen_maze(unsigned long rows, unsigned long cols, void (*relocate)(struct cell*));
+struct maze* gen_maze(unsigned long rows, unsigned long cols, void (*relocate)(struct cell*), unsigned long limit);
 
 // deconstructs and frees the given maze pointer
 void clean_maze(struct maze* input);
