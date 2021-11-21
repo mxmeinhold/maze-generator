@@ -1,0 +1,9 @@
+[MASTER]
+persistent = yes
+load-plugins = pylint_quotes,pylint_fixme_info
+
+[MESSAGES CONTROL]
+disable = fixme
+
+[FORMAT]
+output-format = colorized

@@ -1,0 +1,4 @@
+mypy~=0.910
+pylint~=2.10.2
+pylint-fixme-info~=1.0.2
+pylint-quotes~=0.2.3

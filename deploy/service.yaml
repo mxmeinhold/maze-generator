@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: maze-web
+  name: maze-web
+  namespace: maze-web
+spec:
+  ports:
+  - name: 8080-tcp
+    port: 8080
+    protocol: TCP
+    targetPort: 5000
+  selector:
+    deploymentconfig: maze-web
+  sessionAffinity: None
+  type: ClusterIP

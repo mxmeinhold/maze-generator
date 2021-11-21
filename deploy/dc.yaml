@@ -1,0 +1,73 @@
+apiVersion: apps.openshift.io/v1
+kind: DeploymentConfig
+metadata:
+  labels:
+    app: maze-web
+    tags.datadog.com/service: maze-web
+  name: maze-web
+  namespace: maze-web
+spec:
+  replicas: 1
+  revisionHistoryLimit: 2
+  selector:
+    deploymentconfig: maze-web
+  strategy:
+    activeDeadlineSeconds: 21600
+    resources: {}
+    rollingParams:
+      intervalSeconds: 1
+      maxSurge: 25%
+      maxUnavailable: 25%
+      timeoutSeconds: 600
+      updatePeriodSeconds: 1
+    type: Rolling
+  template:
+    metadata:
+      labels:
+        app: maze-web
+        deploymentconfig: maze-web
+        tags.datadog.com/service: maze-web
+    spec:
+      containers:
+      - env:
+        - name: SERVER_NAME
+          value: maze.cs.house
+        - name: PORT
+          value: "5000"
+        - name: MAZE_EXEC_PATH
+          value: "/opt/maze-web/maze"
+        - name: DD_AGENT_HOST
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: status.hostIP
+        - name: DD_SERVICE
+          value: maze-web
+        envFrom:
+          - secretRef:
+              name: session-key
+        imagePullPolicy: Always
+        name: maze-web
+        ports:
+        - containerPort: 5000
+          protocol: TCP
+        resources: {}
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      terminationGracePeriodSeconds: 30
+  test: false
+  triggers:
+  - imageChangeParams:
+      automatic: true
+      containerNames:
+      - maze-web
+      from:
+        kind: ImageStreamTag
+        name: maze-web:latest
+        namespace: maze-web
+    type: ImageChange
+  - type: ConfigChange

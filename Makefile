@@ -33,7 +33,7 @@ BUILD_DIR = target
 ANALYSIS_DIR = $(BUILD_DIR)/analysis
 
 SOURCEDIR = .
-SOURCES := $(subst ./,,$(shell find $(SOURCEDIR) -name '*.c'))
+SOURCES := $(subst ./,,$(shell find $(SOURCEDIR) -maxdepth 1 -name '*.c'))
 _O_FILES = $(SOURCES:%.c=%.o)
 O_DIR = $(BUILD_DIR)/obj
 

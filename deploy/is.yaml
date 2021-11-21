@@ -1,0 +1,10 @@
+apiVersion: image.openshift.io/v1
+kind: ImageStream
+metadata:
+  labels:
+    app: maze-web
+  name: maze-web
+  namespace: maze-web
+spec:
+  lookupPolicy:
+    local: false
