@@ -45,10 +45,48 @@ struct cell {
 #define NUM_NEIGH 4
 
 /**
+ * Allocate a maze
+ *
+ * This is a helper function for allocating a maze's datastructures. Useful if
+ * you're looking to do some form of custom generation, otherwise see the
+ * `gen_maze_*` functions below.
+ *
+ * Args:
+ * - dims: length of `dims_array`
+ * - dims_array: array of sizes of maze dimensions
+ *
+ * Return: The allocated maze. Deallocate using `clean_maze()`
+ */
+struct maze* alloc_maze(unsigned dims, unsigned long* dims_array);
+
+/**
+ * Get a cell from the maze
+ *
+ * _THIS FUNCTION DOES NO BOUNDS CHECKING_
+ * You must validate the coordinates you pass this function yourself.
+ *
+ * Args:
+ * - maze: the maze to look in
+ * - coords: the coordinates of the cell you want, in the order of `maze->dim_array`
+ *
+ * Return: Pointer to the requested cell
+ *
+ */
+struct cell* get_cell(struct maze* maze, unsigned long* coords);
+
+/**
+ * Link each cell in the maze to its neighbors, populating the `walls` list of
+ * each cell
+ *
+ * Any two cells who's coordinates differ by exactly 1 in 1 and only 1
+ * dimension are neighbors.
+ */
+void link_neighs(struct maze* maze);
+
+/**
  * Allocate and generate a three dimensional maze using 6-connected neighbors
  *
- * Any 2 cells who's coords differ by 1 and only 1 in 1 and only 1 dimension
- * are neighbors
+ * Uses the definition of neighbors from `link_neighs()`
  *
  * Args:
  * * rows: The number of rows in the maze
@@ -62,6 +100,8 @@ struct maze* gen_maze_3d_6(unsigned long rows, unsigned long cols, unsigned long
 
 /**
  * Allocate and generate a two dimensional maze using 4-connected neighbors
+ *
+ * Uses the definition of neighbors from `link_neighs()`
  *
  * Args:
  * * rows: The number of rows in the maze
