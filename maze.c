@@ -56,7 +56,7 @@ struct arguments {
     /** Out format */
     const char* out_format;
     /** Exit immediately flag */
-    volatile short exit;
+    //volatile short exit; // TODO
 };
 
 /**
@@ -239,8 +239,8 @@ void write_maze_png(const struct maze* maze, struct arguments* args) {
         }
     }
 
-    for (unsigned short r = 0; r < maze->rows; r++) {
-        for (unsigned short c = 0; c < maze->cols; c++) {
+    for (unsigned short r = 0; r < maze->dims_array[0]; r++) {
+        for (unsigned short c = 0; c < maze->dims_array[1]; c++) {
             struct cell* cell = maze->maze[r][c];
             if (!cell->visited) continue;
             img.rows[cell->row][cell->col].red = 255;
@@ -277,8 +277,8 @@ void write_maze_text(const struct maze* maze, struct arguments* args) {
         }
     }
 
-    for (unsigned short r = 0; r < maze->rows; r++) {
-        for (unsigned short c = 0; c < maze->cols; c++) {
+    for (unsigned short r = 0; r < maze->dims_array[0]; r++) {
+        for (unsigned short c = 0; c < maze->dims_array[1]; c++) {
             struct cell* cell = maze->maze[r][c];
             rows[cell->row][cell->col] = ' ';
             for (struct list_node* path = cell->paths.start; path != NULL; path = path->next) {
@@ -311,7 +311,7 @@ int main(const int argc, const char** argv) {
     parse_args(&args, argc, argv);
     srand(args.seed);
 
-    struct maze* maze = gen_maze(args.rows, args.cols, &relocate, args.limit);
+    struct maze* maze = gen_maze_4(args.rows, args.cols, &relocate, args.limit);
 
     if (strcmp("png", args.out_format) == 0)
         write_maze_png(maze, &args);

@@ -39,80 +39,157 @@ static void shuffle(struct linked_list* list) {
     }
 }
 
-struct maze* gen_maze(unsigned long rows, unsigned long cols, void (*relocate)(struct cell*), unsigned long limit) {
-    // Init a grid
-    struct maze* out = malloc(sizeof(struct maze));
-    out->rows = rows;
-    out->cols = cols;
-    out->maze = calloc(sizeof(struct cell**), rows);
-    for (unsigned long row = 0; row < out->rows; row++) {
-        out->maze[row] = calloc(sizeof(struct cell*), cols);
+// Recursively allocate a maze, with one recursion layer per dimension
+struct cell** alloc_dim(unsigned dims, unsigned long* dims_array) {
+    if (dims == 0) {
+        // Init a node
+        struct cell* new = calloc(sizeof(struct cell), 1);
+        return (struct cell**) new;
+    } else {
+        struct cell** this = calloc(sizeof(struct cell**), dims_array[0]);
+        for (unsigned long i = 0; i < dims_array[0]; i++) {
+            this[i] = (struct cell*)alloc_dim(dims - 1, dims_array + 1);
+        }
+        return this;
     }
+}
 
-    // Fill it
-    for (unsigned long r = 0; r < rows; r++) {
-        for (unsigned long c = 0; c < cols; c++) {
-            struct cell* new = malloc(sizeof(struct cell));
-            out->maze[r][c] = new;
-            new->row = r;
-            new->col = c;
-            new->walls.end = NULL;
-            new->walls.start = NULL;
-            new->paths.end = NULL;
-            new->paths.start = NULL;
-            new->visited = 0;
+// Alocate a maze
+struct maze* alloc_maze(unsigned dims, unsigned long* dims_array) {
+    struct maze* out = malloc(sizeof(struct maze));
+    out->dims = dims;
+    out->dims_array = calloc(sizeof(unsigned long), dims);
+    for (unsigned d = 0; d < dims; d++) out->dims_array[d] = dims_array[d];
+    out->maze = (struct cell***)alloc_dim(dims, dims_array);
+    return out;
+}
+
+// Get a cell that is located at `coords` from `maze`
+// Coords are used in the order of `maze->dims_array`
+struct cell* get_cell(struct maze* maze, unsigned long* coords) {
+    struct cell** current = (struct cell**) maze->maze;
+    for (unsigned d = 0; d < maze->dims; d++) {
+        current = (struct cell**)current[coords[d]];
+    }
+    return (struct cell*) current;
+}
+
+// Link each cell in the maze to its neighbors
+//
+// Neighbors are defined by:
+// Any two cells who's coordinates differ by exactly 1 in exactly 1 dimension are neighbors.
+void link_neighs(struct maze* maze) {
+    unsigned long* coords = calloc(sizeof(unsigned long), maze->dims);
+    struct cell* cell;
+    struct cell* other;
+    while (1) {
+        cell = get_cell(maze, coords);
+
+        // Set coords
+        cell->coords = calloc(sizeof(unsigned long), maze->dims);
+        for (unsigned c = 0; c < maze->dims; c++) cell->coords[c] = coords[c];
+
+        // Link neighbors
+        for (unsigned d = 0; d < maze->dims; d++) {
+            if (coords[d] + 1 < maze->dims_array[d]) {
+                // plus 1
+                coords[d]++;
+                other = get_cell(maze, coords);
+                list_push(&cell->walls, other);
+                coords[d]--;
+            }
+            if (coords[d] - 1 < maze->dims_array[d]) {
+                // minus 1 (unsigned, so we're checking for underflow)
+                coords[d]--;
+                other = get_cell(maze, coords);
+                list_push(&cell->walls, other);
+                coords[d]++;
+            }
+        }
+
+        shuffle(&cell->walls);
+
+        // Increment the coordinate
+        // Yes this is painful, but it handles n dimensions
+        coords[maze->dims - 1]++;
+        int overflow = coords[maze->dims - 1] >= maze->dims_array[maze->dims - 1];
+        for (long d = maze->dims - 2; d >= 0 && overflow; d--) {
+            coords[d + 1] =  0;
+            coords[d]++;
+            overflow = coords[d] >= maze->dims_array[d];
+        }
+        if (overflow) break;
+    }
+    free(coords);
+
+}
+
+// generate a 3d maze with 6-connected neighbors
+// i.e. any 2 cells who's coords differ by 1 and only 1 in 1 and only 1 dimension are neighbors
+struct maze* gen_maze_3d_6(unsigned long rows, unsigned long cols, unsigned long depth, unsigned long limit) {
+    // Init a grid
+    unsigned long dims_array[] = {rows, cols, depth};
+    struct maze* out = alloc_maze(3, dims_array);
+
+    // Link cells with walls
+    link_neighs(out);
+
+    // Create a maze starting from a random cell
+    // TODO save and return this? something something the maze is a tree?
+    struct cell* start = ((struct cell****)out->maze)
+        [(unsigned long)rand() % out->dims_array[0]]
+        [(unsigned long)rand() % out->dims_array[1]]
+        [(unsigned long)rand() % out->dims_array[2]];
+    gen_maze(start, limit);
+    return out;
+}
+
+
+// generate a 2d maze with 4-connected neighbors
+// i.e. any 2 cells who's coords differ by 1 and only 1 in 1 and only 1 dimension are neighbors
+struct maze* gen_maze_4(unsigned long rows, unsigned long cols, void (*relocate)(struct cell*), unsigned long limit) {
+    // Init a grid
+    unsigned long dims_array[] = {rows, cols};
+    struct maze* out = alloc_maze(2, dims_array);
+
+    // Link cells with walls
+    link_neighs(out);
+
+    // Assign row and col for printing
+    // TODO
+    unsigned long coords[2];
+    for (coords[0] = 0; coords[0] < rows; coords[0]++) {
+        for (coords[1] = 0; coords[1] < cols; coords[1]++) {
+            struct cell* new = get_cell(out, coords);
+            new->row = new->coords[0];
+            new->col = new->coords[1];
             relocate(new);// Ugh TODO
         }
     }
 
-    // Link neighbors (only to the right and down)
-    // We'll have to do the right and bottom edges still
-    for (unsigned long r = 0; r < rows - 1; r++) {
-        for (unsigned long c = 0; c < cols - 1; c++) {
-            struct cell* current = out->maze[r][c];
-            struct cell* down = out->maze[r+1][c];
-            list_push(&current->walls, down);
-            list_push(&down->walls, current);
+    // Create a maze starting from a random cell
+    // TODO save and return this? something something the maze is a tree?
+    struct cell* start = out->maze
+        [(unsigned long)rand() % out->dims_array[0]]
+        [(unsigned long)rand() % out->dims_array[1]];
+    gen_maze(start, limit);
+    return out;
+}
 
-            struct cell* right = out->maze[r][c+1];
-            list_push(&current->walls, right);
-            list_push(&right->walls, current);
-        }
-    }
-
-    // Right edge
-    for (unsigned long r = 0; r < rows - 1; r++) {
-        unsigned long c = cols - 1;
-        struct cell* current = out->maze[r][c];
-        struct cell* down = out->maze[r+1][c];
-        list_push(&current->walls, down);
-        list_push(&down->walls, current);
-    }
-
-    // Bottom edge
-    for (unsigned long c = 0; c < cols - 1; c++) {
-        unsigned long r = rows - 1;
-        struct cell* current = out->maze[r][c];
-        struct cell* right = out->maze[r][c+1];
-        list_push(&current->walls, right);
-        list_push(&right->walls, current);
-    }
-
-    for (unsigned long r = 0; r < rows; r++) {
-        for (unsigned long c = 0; c < cols; c++) {
-            struct cell* n = out->maze[r][c];
-            // Randomize walls
-            shuffle(&n->walls);
-        }
-    }
-
+/**
+ * Build a maze from a given starting node.
+ *
+ * This modifies the nodes in place, solving for a solution and marking walls
+ * as paths via depth first search.
+ *
+ * This function has no dependencies on the number of neighbors a node has, so
+ * mazes of arbitrary connectedness or size should be generatable.
+ */
+void gen_maze(struct cell* node, unsigned long limit) {
+    unsigned long len = 0; // TODO describe this
     // Create a maze
     stack_t stack = new_stack();
 
-    unsigned long len = 0;
-    // pick a random cell
-    // TODO save and return this? something something the maze is a tree?
-    struct cell* node = out->maze[(unsigned long)rand() % out->rows][(unsigned long)rand() % out->cols];
     // mark visited
     node->visited = 1;
     // push to stack
@@ -144,20 +221,33 @@ struct maze* gen_maze(unsigned long rows, unsigned long cols, void (*relocate)(s
     }
 
     stack_deallocate(stack);
-    return out;
+}
+
+
+/* Recursively free each dimension of a maze's cells
+ * Args:
+ * - dims: the length of the dims_array
+ * - dims_array: array of lenths of each dimension
+ * - target: the stuff to be freed
+ */
+void free_maze_cells(unsigned dims, unsigned long* dims_array, struct cell** target) {
+    if (dims == 0) {
+        struct cell* node = (struct cell*)target;
+        list_deallocate(&node->walls);
+        list_deallocate(&node->paths);
+        free(node->coords);
+        free(node);
+    } else {
+        for (unsigned long i = 0; i < dims_array[0]; i++) {
+            free_maze_cells(dims-1, dims_array+1, (struct cell**)target[i]);
+        }
+        free(target);
+    }
 }
 
 void clean_maze(struct maze* input) {
-    for (unsigned long r = 0; r < input->rows; r++) {
-        for (unsigned long c = 0; c < input->cols; c++) {
-            struct cell* node = input->maze[r][c];
-            list_deallocate(&node->walls);
-            list_deallocate(&node->paths);
-            free(node);
-        }
-        free(input->maze[r]);
-    }
-    free(input->maze);
+    free_maze_cells(input->dims, input->dims_array, (struct cell**)input->maze);
+    free(input->dims_array);
     free(input);
 }
 

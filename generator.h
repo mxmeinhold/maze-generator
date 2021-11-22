@@ -26,15 +26,15 @@ void list_remove_data(struct linked_list* list, struct cell* cell);
 void list_deallocate(struct linked_list* list);
 
 struct maze {
-    unsigned long rows;
-    unsigned long cols;
+    unsigned dims;
+    long unsigned* dims_array;
     struct cell*** maze;
-    tree_t neigh_tree;
 };
 
 struct cell {
     unsigned long row;
     unsigned long col;
+    unsigned long* coords;
     short num_wall;
     struct linked_list walls;
     short num_path;
@@ -44,8 +44,46 @@ struct cell {
 
 #define NUM_NEIGH 4
 
-// allocates and fills a maze pointer
-struct maze* gen_maze(unsigned long rows, unsigned long cols, void (*relocate)(struct cell*), unsigned long limit);
+/**
+ * Allocate and generate a three dimensional maze using 6-connected neighbors
+ *
+ * Any 2 cells who's coords differ by 1 and only 1 in 1 and only 1 dimension
+ * are neighbors
+ *
+ * Args:
+ * * rows: The number of rows in the maze
+ * * cols: The number of columns in the maze
+ * * depth: The number of cells in the third dimension
+ * * limit: The limit on the number of iterations while generating the path
+ *
+ * Return: An allocated maze pointer. Deallocate using `clean_maze()`
+ */
+struct maze* gen_maze_3d_6(unsigned long rows, unsigned long cols, unsigned long depth, unsigned long limit);
+
+/**
+ * Allocate and generate a two dimensional maze using 4-connected neighbors
+ *
+ * Args:
+ * * rows: The number of rows in the maze
+ * * cols: The number of columns in the maze
+ * * relocate: A function to remap a cell's row and column. This is mostly for
+ *             convenience for rendering purposes
+ * * limit: The limit on the number of iterations while generating the path
+ *
+ * Return: An allocated maze pointer. Deallocate using `clean_maze()`
+ */
+struct maze* gen_maze_4(unsigned long rows, unsigned long cols, void (*relocate)(struct cell*), unsigned long limit);
+
+/**
+ * Build a maze from a given starting node.
+ *
+ * This modifies the nodes in place, solving for a solution and marking walls
+ * as paths via depth first search.
+ *
+ * This function has no dependencies on the number of neighbors a node has, so
+ * mazes of arbitrary connectedness or size should be generatable.
+ */
+void gen_maze(struct cell* node, unsigned long limit);
 
 // deconstructs and frees the given maze pointer
 void clean_maze(struct maze* input);
