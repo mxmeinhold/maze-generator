@@ -192,7 +192,7 @@ static int parse_args(
                 args_p->out_file = argv[++i];
             } else if (strncmp(argv[i], "--seed", 6) == 0) {
                args_p->seed = hash_string((unsigned const char*)argv[++i]);
-            } else if (strncmp(argv[i], "--path_len", 10) == 0) {
+            } else if (strncmp(argv[i], "--path-len", 10) == 0) {
                 args_p->limit = strtoul(argv[++i], &endptr, 10);
                 if (*endptr != '\0') {
                     fprintf(stderr, "Error: `%s` is not a valid argument for "
