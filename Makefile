@@ -124,11 +124,13 @@ $(ANALYSIS_DIR)/memcheck.%.out: $(BUILD_DIR)/% $(VALGRIND_DEP) $(ANALYSIS_DIR)/%
 
 $(ANALYSIS_DIR)/callgrind.%.out: $(BUILD_DIR)/% $(VALGRIND_DEP) $(ANALYSIS_DIR)/%.test_args
 	@mkdir -p $(@D)
-	valgrind --tool=callgrind --callgrind-out-file="$@" ./$< $$(cat $(ANALYSIS_DIR)/$*.test_args)
+	valgrind --tool=callgrind --dump-instr=yes --collect-jumps=yes --callgrind-out-file="$@" ./$< $$(cat $(ANALYSIS_DIR)/$*.test_args)
 
+$(ANALYSIS_DIR)/callgrind.%.dot: $(ANALYSIS_DIR)/callgrind.%.out
+	gprof2dot -f callgrind $< --root=main > $@
 
-$(ANALYSIS_DIR)/callgrind.%.png: $(ANALYSIS_DIR)/callgrind.%.out
-	gprof2dot -f callgrind $< --root=main | dot -Tpng -o $@
+$(ANALYSIS_DIR)/callgrind.%.png: $(ANALYSIS_DIR)/callgrind.%.dot
+	cat $< | dot -Tpng -o $@
 
 
 .PHONY: watch
