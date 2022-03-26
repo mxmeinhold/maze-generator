@@ -39,7 +39,8 @@ TAB BOLD"--seed"INTENSITY_RESET" "UNDERLINE"seed"UNDERLINE_OFF":\n"TAB TAB"speci
 TAB BOLD"--path-len"INTENSITY_RESET" "UNDERLINE"length"UNDERLINE_OFF":\n"TAB TAB"limit the length of the path.  default: no limit (0)\n"
 TAB BOLD"-f"INTENSITY_RESET" "UNDERLINE"output_path"UNDERLINE_OFF":\n"TAB TAB"where to write the maze png to. default: "STRINGIFY(DEFAULT_OUTFILE)"\n"
 TAB BOLD"--format"INTENSITY_RESET" "UNDERLINE""VALID_OUT_FORMATS""UNDERLINE_OFF":\n"TAB TAB"what format to use when writing to the output default: "STRINGIFY(DEFAULT_OUT_FORMAT)"\n"
-TAB BOLD"--print-valid-formats"INTENSITY_RESET":\n"TAB TAB"print the valid format strings, one per line, and exit\n";
+TAB BOLD"--print-valid-formats"INTENSITY_RESET":\n"TAB TAB"print the valid format strings, one per line, and exit\n"
+TAB BOLD"--write-steps"INTENSITY_RESET" "UNDERLINE"prefix"UNDERLINE_OFF":\n"TAB TAB"write each step of maze generation as '"UNDERLINE"prefix"UNDERLINE_OFF"<number>.png'\n";
 
 /** Arguments struct  */
 struct arguments {
@@ -58,6 +59,15 @@ struct arguments {
     /** Exit immediately flag */
     //volatile short exit; // TODO
 };
+
+/**
+ * If this isn't NULL, we'll write each step of the maze generation as a
+ * separate png. This allows for visual examination of the process, or for
+ * making a gif.
+ *
+ * this is a global because I need to access it in the write_steps function
+ */
+volatile char* write_steps_prefix;
 
 /**
  * Hash a string to an int.
@@ -142,6 +152,7 @@ static int parse_args(
     args_p->out_format = DEFAULT_OUT_FORMAT;
     args_p->seed = (unsigned int) DEFAULT_SEED;
     args_p->limit = 0; // No limit
+    write_steps_prefix = NULL;
 
     // If any arg is -h, print help and exit
     if (argc  >= 2) {
@@ -205,6 +216,8 @@ static int parse_args(
                if (strstr(VALID_OUT_FORMATS, args_p->out_format) == NULL) {
                     fprintf(stderr, "Error: `%s` is a ", args_p->out_format);
                }
+            } else if (strncmp(argv[i], "--write-steps", 15) == 0) {
+               write_steps_prefix = (char*) argv[++i];
             }
         }
     }
@@ -218,25 +231,28 @@ static int parse_args(
     return 0;
 }
 
+// Image for printing steps. Shared by all step prints to reduce allocations
+struct img* step_img;
+
 /** cleanup actions to take on normal exit */
 void cleanup(void) {
     free(usage);
+
+    if (step_img) {
+        for (int r = 0; r < step_img->height; r++) free(step_img->rows[r]);
+        free(step_img->rows);
+        free(step_img);
+    }
 }
 
 /** write the maze as a png */
-void write_maze_png(const struct maze* maze, struct arguments* args) {
+void write_maze_png(const struct maze* maze, const struct cell* current, const char* filename) {
     struct img img;
-    img.height = (int) (2 * args->rows + 1);
-    img.width = (int) (2 * args->cols + 1);
+    img.height = (int) (2 * maze->dims_array[0] + 1);
+    img.width = (int) (2 * maze->dims_array[1] + 1);
     img.rows = calloc(sizeof(struct pixel*), (size_t)img.height);
     for (int r = 0; r < img.height; r++) {
         img.rows[r] = calloc(sizeof(struct pixel), (size_t)img.width);
-        for (int c = 0; c < img.width; c++) {
-            // It might be a wall. More on that later.
-            img.rows[r][c].red = 0;
-            img.rows[r][c].green = 0;
-            img.rows[r][c].blue = 0;
-        }
     }
 
     for (unsigned short r = 0; r < maze->dims_array[0]; r++) {
@@ -246,6 +262,11 @@ void write_maze_png(const struct maze* maze, struct arguments* args) {
             img.rows[cell->row][cell->col].red = 255;
             img.rows[cell->row][cell->col].green = 255;
             img.rows[cell->row][cell->col].blue = 255;
+            if (current && (2 * r + 1) == (long)current->row && (2 * c + 1) == (long)current->col) {
+                img.rows[cell->row][cell->col].red = 255;
+                img.rows[cell->row][cell->col].green = 0;
+                img.rows[cell->row][cell->col].blue = 0;
+            }
             for (struct list_node* path = cell->paths.start; path != NULL; path = path->next) {
                 long row = (long) path->cell->row + ((long)cell->row - (long)path->cell->row) / 2;
                 long col = (long) path->cell->col + ((long)cell->col - (long)path->cell->col) / 2;
@@ -255,7 +276,7 @@ void write_maze_png(const struct maze* maze, struct arguments* args) {
             }
         }
     }
-    writepng(args->out_file, &img);
+    writepng(filename, &img);
 
     // Free the image
     for (int r = 0; r < img.height; r++) free(img.rows[r]);
@@ -302,6 +323,77 @@ void write_maze_text(const struct maze* maze, struct arguments* args) {
     free(rows);
 }
 
+void write_step(const struct maze* maze, const struct cell* current, const unsigned int step) {
+    // Init our cache on the first run
+    if (!step_img) {
+        step_img = calloc(sizeof(struct img), 1);
+        step_img->height = (int) (2 * maze->dims_array[0] + 1);
+        step_img->width = (int) (2 * maze->dims_array[1] + 1);
+        step_img->rows = calloc(sizeof(struct pixel*), (size_t)step_img->height);
+        for (int r = 0; r < step_img->height; r++) {
+            step_img->rows[r] = calloc(sizeof(struct pixel), (size_t)step_img->width);
+        }
+
+        // On the first run, generate the whole image
+        for (unsigned short r = 0; r < maze->dims_array[0]; r++) {
+            for (unsigned short c = 0; c < maze->dims_array[1]; c++) {
+                struct cell* cell = maze->maze[r][c];
+                if (!cell->visited) continue;
+                step_img->rows[cell->row][cell->col].red = 255;
+                step_img->rows[cell->row][cell->col].green = 255;
+                step_img->rows[cell->row][cell->col].blue = 255;
+                if (current && (2 * r + 1) == (long)current->row && (2 * c + 1) == (long)current->col) {
+                    step_img->rows[cell->row][cell->col].red = 255;
+                    step_img->rows[cell->row][cell->col].green = 0;
+                    step_img->rows[cell->row][cell->col].blue = 0;
+                }
+                for (struct list_node* path = cell->paths.start; path != NULL; path = path->next) {
+                    long row = (long) path->cell->row + ((long)cell->row - (long)path->cell->row) / 2;
+                    long col = (long) path->cell->col + ((long)cell->col - (long)path->cell->col) / 2;
+                    step_img->rows[row][col].red = 255;
+                    step_img->rows[row][col].green = 255;
+                    step_img->rows[row][col].blue = 255;
+                }
+            }
+        }
+    } else {
+        if (!current) return;
+        unsigned long rows = maze->dims_array[0];
+        unsigned long cols = maze->dims_array[1];
+
+        unsigned short rmin = (unsigned short)(current->row + (current->row > 0)? -1 : 0);
+        unsigned short cmin = (unsigned short)(current->col + (current->col > 0)? -1 : 0);
+        unsigned short rmax = (unsigned short)(current->row + (current->row + 1 < rows)? 1 : rows - 1);
+        unsigned short cmax = (unsigned short)(current->col + (current->col + 1 < cols)? 1 : cols - 1);
+
+        // We only have to update anything immediately surrounding the current
+        for (unsigned short r = rmin; r <= rmax; r++) {
+            for (unsigned short c = cmin; c <= cmax; c++) {
+                struct cell* cell = maze->maze[r][c];
+                if (!cell->visited) continue;
+                step_img->rows[cell->row][cell->col].red = 255;
+                step_img->rows[cell->row][cell->col].green = 255;
+                step_img->rows[cell->row][cell->col].blue = 255;
+                if (current && (2 * r + 1) == (long)current->row && (2 * c + 1) == (long)current->col) {
+                    step_img->rows[cell->row][cell->col].red = 255;
+                    step_img->rows[cell->row][cell->col].green = 0;
+                    step_img->rows[cell->row][cell->col].blue = 0;
+                }
+                for (struct list_node* path = cell->paths.start; path != NULL; path = path->next) {
+                    long row = (long) path->cell->row + ((long)cell->row - (long)path->cell->row) / 2;
+                    long col = (long) path->cell->col + ((long)cell->col - (long)path->cell->col) / 2;
+                    step_img->rows[row][col].red = 255;
+                    step_img->rows[row][col].green = 255;
+                    step_img->rows[row][col].blue = 255;
+                }
+            }
+        }
+    }
+    char out_file[40];
+    sprintf(out_file, "%s%04d.png", write_steps_prefix, step);
+    writepng(out_file, step_img);
+}
+
 int main(const int argc, const char** argv) {
     atexit(cleanup);
 
@@ -311,10 +403,15 @@ int main(const int argc, const char** argv) {
     parse_args(&args, argc, argv);
     srand(args.seed);
 
-    struct maze* maze = gen_maze_4(args.rows, args.cols, &relocate, args.limit);
+    struct maze* maze;
+    if (write_steps_prefix == NULL) {
+        maze = gen_maze_4(args.rows, args.cols, &relocate, args.limit, NULL);
+    } else {
+        maze = gen_maze_4(args.rows, args.cols, &relocate, args.limit, &write_step);
+    }
 
     if (strcmp("png", args.out_format) == 0)
-        write_maze_png(maze, &args);
+        write_maze_png(maze, NULL, args.out_file);
     else if (strcmp("text", args.out_format) == 0)
         write_maze_text(maze, &args);
 

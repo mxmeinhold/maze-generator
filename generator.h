@@ -96,7 +96,7 @@ void link_neighs(struct maze* maze);
  *
  * Return: An allocated maze pointer. Deallocate using `clean_maze()`
  */
-struct maze* gen_maze_3d_6(unsigned long rows, unsigned long cols, unsigned long depth, unsigned long limit);
+struct maze* gen_maze_3d_6(unsigned long rows, unsigned long cols, unsigned long depth, unsigned long limit, void (*write_step)(const struct maze*, const struct cell*, unsigned int));
 
 /**
  * Allocate and generate a two dimensional maze using 4-connected neighbors
@@ -112,7 +112,7 @@ struct maze* gen_maze_3d_6(unsigned long rows, unsigned long cols, unsigned long
  *
  * Return: An allocated maze pointer. Deallocate using `clean_maze()`
  */
-struct maze* gen_maze_4(unsigned long rows, unsigned long cols, void (*relocate)(struct cell*), unsigned long limit);
+struct maze* gen_maze_4(unsigned long rows, unsigned long cols, void (*relocate)(struct cell*), unsigned long limit, void (*write_step)(const struct maze*, const struct cell*, unsigned int));
 
 /**
  * Build a maze from a given starting node.
@@ -123,7 +123,7 @@ struct maze* gen_maze_4(unsigned long rows, unsigned long cols, void (*relocate)
  * This function has no dependencies on the number of neighbors a node has, so
  * mazes of arbitrary connectedness or size should be generatable.
  */
-void gen_maze(struct cell* node, unsigned long limit);
+void gen_maze(struct cell* node, unsigned long limit, struct maze* maze, void (*write_step)(const struct maze*, const struct cell*, unsigned int));
 
 // deconstructs and frees the given maze pointer
 void clean_maze(struct maze* input);

@@ -76,6 +76,13 @@ $(D_DIR)/%.d: %.c
 run: $(MAZE_EXEC)
 	./$(MAZE_EXEC) --size 10
 
+.PHONY: gif
+gif: $(MAZE_EXEC)
+	rm -f maze-step*.png
+	./$(MAZE_EXEC) --size 10 --write-steps maze-step
+	convert $$(echo maze-step*.png | xargs -n1 echo | sort -V) -delay 1 -loop 0 +remap -layers optimize maze.gif
+	rm maze-step*.png
+
 VALGRIND_DEP = $(BUILD_DIR)/.valgrind
 $(VALGRIND_DEP):
 	@command -v valgrind >/dev/null 2>&1 || { echo >&2 "valgrind not found, aborting analyze"; exit 1; }

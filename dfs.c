@@ -126,7 +126,7 @@ void link_neighs(struct maze* maze) {
 
 // generate a 3d maze with 6-connected neighbors
 // i.e. any 2 cells who's coords differ by 1 and only 1 in 1 and only 1 dimension are neighbors
-struct maze* gen_maze_3d_6(unsigned long rows, unsigned long cols, unsigned long depth, unsigned long limit) {
+struct maze* gen_maze_3d_6(unsigned long rows, unsigned long cols, unsigned long depth, unsigned long limit, void (*write_step)(const struct maze*, const struct cell*, unsigned int)) {
     // Init a grid
     unsigned long dims_array[] = {rows, cols, depth};
     struct maze* out = alloc_maze(3, dims_array);
@@ -140,14 +140,14 @@ struct maze* gen_maze_3d_6(unsigned long rows, unsigned long cols, unsigned long
         [(unsigned long)rand() % out->dims_array[0]]
         [(unsigned long)rand() % out->dims_array[1]]
         [(unsigned long)rand() % out->dims_array[2]];
-    gen_maze(start, limit);
+    gen_maze(start, limit, out, write_step);
     return out;
 }
 
 
 // generate a 2d maze with 4-connected neighbors
 // i.e. any 2 cells who's coords differ by 1 and only 1 in 1 and only 1 dimension are neighbors
-struct maze* gen_maze_4(unsigned long rows, unsigned long cols, void (*relocate)(struct cell*), unsigned long limit) {
+struct maze* gen_maze_4(unsigned long rows, unsigned long cols, void (*relocate)(struct cell*), unsigned long limit, void (*write_step)(const struct maze*, const struct cell*, unsigned int)) {
     // Init a grid
     unsigned long dims_array[] = {rows, cols};
     struct maze* out = alloc_maze(2, dims_array);
@@ -172,7 +172,7 @@ struct maze* gen_maze_4(unsigned long rows, unsigned long cols, void (*relocate)
     struct cell* start = out->maze
         [(unsigned long)rand() % out->dims_array[0]]
         [(unsigned long)rand() % out->dims_array[1]];
-    gen_maze(start, limit);
+    gen_maze(start, limit, out, write_step);
     return out;
 }
 
@@ -185,7 +185,9 @@ struct maze* gen_maze_4(unsigned long rows, unsigned long cols, void (*relocate)
  * This function has no dependencies on the number of neighbors a node has, so
  * mazes of arbitrary connectedness or size should be generatable.
  */
-void gen_maze(struct cell* node, unsigned long limit) {
+void gen_maze(struct cell* node, unsigned long limit, struct maze* maze, void (*write_step)(const struct maze*, const struct cell*, unsigned int)) {
+    unsigned int step = 0;
+    if (write_step) write_step(maze, NULL, step++);
     unsigned long len = 0; // TODO describe this
     // Create a maze
     stack_t stack = new_stack();
@@ -199,6 +201,7 @@ void gen_maze(struct cell* node, unsigned long limit) {
         if (limit && len++ >= limit) break;
         // pop
         node = (struct cell*) stack_pop(stack); stack_size--;
+        if (write_step) write_step(maze, node, step++);
         // pick an unvisited neighbor
         struct list_node* wall = node->walls.start;
         for (; wall != NULL;) {
@@ -219,6 +222,8 @@ void gen_maze(struct cell* node, unsigned long limit) {
             wall = next;
         }
     }
+
+    if (write_step) write_step(maze, NULL, step++);
 
     stack_deallocate(stack);
 }
