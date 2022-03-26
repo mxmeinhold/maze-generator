@@ -1,5 +1,6 @@
 #include <img.h>
 #include <stdlib.h> // free(), calloc()
+#include <stdio.h> // file handling
 
 #include "text-format.h"
 

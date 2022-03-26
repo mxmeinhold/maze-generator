@@ -18,8 +18,8 @@ CFLAGS += -static
 endif
 
 # Warnings
-WARNINGS = -Wall -Wextra -Wpedantic -Wconversion -Wformat=2 -Winit-self \
-	-Wmissing-include-dirs -Wformat-nonliteral -Wnested-externs \
+WARNINGS = -Wall -Wextra -Wpedantic -Wconversion -Wformat=2 \
+	-Wformat-nonliteral -Winit-self -Wmissing-include-dirs -Wnested-externs \
 	-Wno-unused-parameter -Wold-style-definition -Wredundant-decls -Wshadow \
 	-Wstrict-prototypes -Wwrite-strings
 
