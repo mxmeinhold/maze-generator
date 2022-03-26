@@ -172,7 +172,7 @@ static int parse_args(
     // Parse the other flags, if there are any
     char* endptr;
     unsigned long size = DEFAULT_SIZE, rows = 0, cols = 0;
-    if (argc > 2) {
+    if (argc > 1) {
         for (int i = 1; i < argc; i++) {
             if (i == argc - 1) {
                 fprintf(stderr, "Error: Missing argument for %s.\n", argv[i]);
@@ -210,14 +210,18 @@ static int parse_args(
                             "--limit (must be a positive integer or 0)\n", argv[i]);
                     return 2; // User gave bad values
                 }
-            } else if (strncmp(argv[i], "--format", 8) == 0) {
+            } else if (strncmp(argv[i], "--format", 9) == 0) {
                args_p->out_format = argv[++i];
                // Verify it's valid
                if (strstr(VALID_OUT_FORMATS, args_p->out_format) == NULL) {
-                    fprintf(stderr, "Error: `%s` is a ", args_p->out_format);
+                    fprintf(stderr, "Error: `%s` isn't a valid output format.\n",
+                            args_p->out_format);
                }
             } else if (strncmp(argv[i], "--write-steps", 15) == 0) {
                write_steps_prefix = (char*) argv[++i];
+            } else {
+                fprintf(stderr, "Error: `%s` isn't a flag.\n", argv[i]);
+                return 2; // User gave bad values
             }
         }
     }
@@ -400,7 +404,8 @@ int main(const int argc, const char** argv) {
     usage = get_usage(argc, argv);
 
     struct arguments args;
-    parse_args(&args, argc, argv);
+    int err = parse_args(&args, argc, argv);
+    if (err) return err;
     srand(args.seed);
 
     struct maze* maze;
