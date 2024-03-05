@@ -21,7 +21,7 @@ WORKDIR /usr/src/maze
 COPY ./*.c ./*.h Makefile ./
 RUN make STATIC=1
 
-FROM python:3.9-alpine
+FROM python:3.11-alpine
 LABEL maintainer="Max Meinhold <mxmeinhold@gmail.com>"
 
 RUN apk add git && \
