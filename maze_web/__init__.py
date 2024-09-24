@@ -36,6 +36,7 @@ def _png(out_format: str = 'png') -> Response:
       - rows: the number of rows
       - cols: the number of columns
       - seed: plaintext seed to use
+      - path_len: the maximum length of the path, defaulting to no limit (0)
 
     Path params:
       - out_format: the format to return
@@ -44,6 +45,7 @@ def _png(out_format: str = 'png') -> Response:
     rows = request.args.get('rows', APP.config['DEFAULT_SIZE'])
     cols = request.args.get('cols', APP.config['DEFAULT_SIZE'])
     seed = request.args.get('seed', None)
+    path_len = request.args.get('path_len', 0)
 
     valid_out_formats = set(subprocess.check_output([
         APP.config['EXEC_PATH'],
@@ -58,6 +60,7 @@ def _png(out_format: str = 'png') -> Response:
                 APP.config['EXEC_PATH'],
                 '--rows', rows,
                 '--cols', cols,
+                '--path-len', path_len,
                 '-f', APP.config['OUT_PATH'],
                 '--format', out_format,
             ] + (['--seed', seed] if seed else []))
@@ -66,6 +69,7 @@ def _png(out_format: str = 'png') -> Response:
                 APP.config['EXEC_PATH'],
                 '--rows', str(rows),
                 '--cols', str(cols),
+                '--path-len', path_len,
                 '-f', APP.config['OUT_PATH'],
                 '--format', out_format,
             ] + (['--seed', seed] if seed else []),
