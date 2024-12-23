@@ -3,8 +3,8 @@ LABEL maintainer="Max Meinhold <mxmeinhold@gmail.com>"
 
 RUN apk add --no-cache build-base bash
 
-ENV LIBPNG_VER=1.6.40-r0
-ENV ZLIB_VER=1.3.1-r0
+ENV LIBPNG_VER=1.6.44-r0
+ENV ZLIB_VER=1.3.1-r2
 
 RUN apk add --no-cache libpng-dev=${LIBPNG_VER} libpng-static=${LIBPNG_VER} \
     zlib-dev=${ZLIB_VER} zlib-static=${ZLIB_VER}
