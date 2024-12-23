@@ -69,7 +69,7 @@ def _png(out_format: str = 'png') -> Response:
                 APP.config['EXEC_PATH'],
                 '--rows', str(rows),
                 '--cols', str(cols),
-                '--path-len', path_len,
+                '--path-len', str(path_len),
                 '-f', APP.config['OUT_PATH'],
                 '--format', out_format,
             ] + (['--seed', seed] if seed else []),
