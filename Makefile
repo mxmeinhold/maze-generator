@@ -128,6 +128,13 @@ $(ANALYSIS_DIR)/memcheck.%.out: $(BUILD_DIR)/% $(VALGRIND_DEP) $(ANALYSIS_DIR)/%
 	@mkdir -p $(@D)
 	valgrind --tool=memcheck --leak-check=full --show-leak-kinds=all --track-origins=yes --log-file="$@" ./$< $$(cat $(ANALYSIS_DIR)/$*.test_args)
 
+$(ANALYSIS_DIR)/massif.%.out: $(BUILD_DIR)/% $(VALGRIND_DEP) $(ANALYSIS_DIR)/%.test_args
+	@mkdir -p $(@D)
+	valgrind --tool=massif --massif-out-file="$@" ./$< $$(cat $(ANALYSIS_DIR)/$*.test_args)
+
+$(ANALYSIS_DIR)/massif.%.print: $(ANALYSIS_DIR)/massif.%.out
+	@mkdir -p $(@D)
+	ms_print $< >> $@
 
 $(ANALYSIS_DIR)/callgrind.%.out: $(BUILD_DIR)/% $(VALGRIND_DEP) $(ANALYSIS_DIR)/%.test_args
 	@mkdir -p $(@D)
