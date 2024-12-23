@@ -91,10 +91,11 @@ unsigned int hash_string(unsigned const char* str) {
     return out;
 }
 
-void relocate(struct cell* c) {
-    c->row = c->row * 2 + 1;
-    c->col = c->col * 2 + 1;
-}
+//void relocate(struct cell* c) {
+    //c->row = c->row * 2 + 1;
+    //c->col = c->col * 2 + 1;
+    //return; // TODO
+//}
 
 intmax_t strcompare(const void* self, const void* other) {
     return (intmax_t) strcmp((void*) self, (void*) other);
@@ -259,21 +260,32 @@ void write_maze_png(const struct maze* maze, const struct cell* current, const c
         img.rows[r] = calloc((size_t)img.width, sizeof(struct pixel));
     }
 
+    unsigned long current_row;
+    unsigned long current_col;
+    if (current) {
+        current_row = current->coords[0] * 2 + 1;
+        current_col = current->coords[1] * 2 + 1;
+    }
+
     for (unsigned short r = 0; r < maze->dims_array[0]; r++) {
         for (unsigned short c = 0; c < maze->dims_array[1]; c++) {
             struct cell* cell = maze->maze[r][c];
+            unsigned long cell_row = cell->coords[0] * 2 + 1;
+            unsigned long cell_col = cell->coords[1] * 2 + 1;
             if (!cell->visited) continue;
-            img.rows[cell->row][cell->col].red = 255;
-            img.rows[cell->row][cell->col].green = 255;
-            img.rows[cell->row][cell->col].blue = 255;
-            if (current && (2 * r + 1) == (long)current->row && (2 * c + 1) == (long)current->col) {
-                img.rows[cell->row][cell->col].red = 255;
-                img.rows[cell->row][cell->col].green = 0;
-                img.rows[cell->row][cell->col].blue = 0;
+            img.rows[cell_row][cell_col].red = 255;
+            img.rows[cell_row][cell_col].green = 255;
+            img.rows[cell_row][cell_col].blue = 255;
+            if (current && (2 * r + 1) == (long)current_row && (2 * c + 1) == (long)current_col) {
+                img.rows[cell_row][cell_col].red = 255;
+                img.rows[cell_row][cell_col].green = 0;
+                img.rows[cell_row][cell_col].blue = 0;
             }
             for (struct list_node* path = cell->paths.start; path != NULL; path = path->next) {
-                long row = (long) path->cell->row + ((long)cell->row - (long)path->cell->row) / 2;
-                long col = (long) path->cell->col + ((long)cell->col - (long)path->cell->col) / 2;
+                unsigned long path_row = path->cell->coords[0] * 2 + 1;
+                unsigned long path_col = path->cell->coords[1] * 2 + 1;
+                long row = (long) path_row + ((long)cell_row - (long)path_row) / 2;
+                long col = (long) path_col + ((long)cell_col - (long)path_col) / 2;
                 img.rows[row][col].red = 255;
                 img.rows[row][col].green = 255;
                 img.rows[row][col].blue = 255;
@@ -305,10 +317,14 @@ void write_maze_text(const struct maze* maze, struct arguments* args) {
     for (unsigned short r = 0; r < maze->dims_array[0]; r++) {
         for (unsigned short c = 0; c < maze->dims_array[1]; c++) {
             struct cell* cell = maze->maze[r][c];
-            rows[cell->row][cell->col] = ' ';
+            unsigned long cell_row = cell->coords[0] * 2 + 1;
+            unsigned long cell_col = cell->coords[1] * 2 + 1;
+            rows[cell_row][cell_col] = ' ';
             for (struct list_node* path = cell->paths.start; path != NULL; path = path->next) {
-                long row = (long) path->cell->row + ((long)cell->row - (long)path->cell->row) / 2;
-                long col = (long) path->cell->col + ((long)cell->col - (long)path->cell->col) / 2;
+                unsigned long path_row = path->cell->coords[0] * 2 + 1;
+                unsigned long path_col = path->cell->coords[1] * 2 + 1;
+                long row = (long) path_row + ((long)cell_row - (long)path_row) / 2;
+                long col = (long) path_col + ((long)cell_col - (long)path_col) / 2;
                 rows[row][col] = ' ';
             }
         }
@@ -328,6 +344,13 @@ void write_maze_text(const struct maze* maze, struct arguments* args) {
 }
 
 void write_step(const struct maze* maze, const struct cell* current, const unsigned int step) {
+    unsigned long current_row;
+    unsigned long current_col;
+    if (current) {
+        current_row = current->coords[0] * 2 + 1;
+        current_col = current->coords[1] * 2 + 1;
+    }
+
     // Init our cache on the first run
     if (!step_img) {
         step_img = calloc(1, sizeof(struct img));
@@ -343,17 +366,21 @@ void write_step(const struct maze* maze, const struct cell* current, const unsig
             for (unsigned short c = 0; c < maze->dims_array[1]; c++) {
                 struct cell* cell = maze->maze[r][c];
                 if (!cell->visited) continue;
-                step_img->rows[cell->row][cell->col].red = 255;
-                step_img->rows[cell->row][cell->col].green = 255;
-                step_img->rows[cell->row][cell->col].blue = 255;
-                if (current && (2 * r + 1) == (long)current->row && (2 * c + 1) == (long)current->col) {
-                    step_img->rows[cell->row][cell->col].red = 255;
-                    step_img->rows[cell->row][cell->col].green = 0;
-                    step_img->rows[cell->row][cell->col].blue = 0;
+                unsigned long cell_row = cell->coords[0] * 2 + 1;
+                unsigned long cell_col = cell->coords[1] * 2 + 1;
+                step_img->rows[cell_row][cell_col].red = 255;
+                step_img->rows[cell_row][cell_col].green = 255;
+                step_img->rows[cell_row][cell_col].blue = 255;
+                if (current && (2 * r + 1) == (long)current_row && (2 * c + 1) == (long)current_col) {
+                    step_img->rows[cell_row][cell_col].red = 255;
+                    step_img->rows[cell_row][cell_col].green = 0;
+                    step_img->rows[cell_row][cell_col].blue = 0;
                 }
                 for (struct list_node* path = cell->paths.start; path != NULL; path = path->next) {
-                    long row = (long) path->cell->row + ((long)cell->row - (long)path->cell->row) / 2;
-                    long col = (long) path->cell->col + ((long)cell->col - (long)path->cell->col) / 2;
+                    unsigned long path_row = path->cell->coords[0] * 2 + 1;
+                    unsigned long path_col = path->cell->coords[1] * 2 + 1;
+                    long row = (long) path_row + ((long)cell_row - (long)path_row) / 2;
+                    long col = (long) path_col + ((long)cell_col - (long)path_col) / 2;
                     step_img->rows[row][col].red = 255;
                     step_img->rows[row][col].green = 255;
                     step_img->rows[row][col].blue = 255;
@@ -365,27 +392,31 @@ void write_step(const struct maze* maze, const struct cell* current, const unsig
         unsigned long rows = maze->dims_array[0];
         unsigned long cols = maze->dims_array[1];
 
-        unsigned short rmin = (unsigned short)(current->row + (current->row > 0)? -1 : 0);
-        unsigned short cmin = (unsigned short)(current->col + (current->col > 0)? -1 : 0);
-        unsigned short rmax = (unsigned short)(current->row + (current->row + 1 < rows)? 1 : rows - 1);
-        unsigned short cmax = (unsigned short)(current->col + (current->col + 1 < cols)? 1 : cols - 1);
+        unsigned short rmin = (unsigned short)(current_row + (current_row > 0)? -1 : 0);
+        unsigned short cmin = (unsigned short)(current_col + (current_col > 0)? -1 : 0);
+        unsigned short rmax = (unsigned short)(current_row + (current_row + 1 < rows)? 1 : rows - 1);
+        unsigned short cmax = (unsigned short)(current_col + (current_col + 1 < cols)? 1 : cols - 1);
 
         // We only have to update anything immediately surrounding the current
         for (unsigned short r = rmin; r <= rmax; r++) {
             for (unsigned short c = cmin; c <= cmax; c++) {
                 struct cell* cell = maze->maze[r][c];
+                unsigned long cell_row = cell->coords[0] * 2 + 1;
+                unsigned long cell_col = cell->coords[1] * 2 + 1;
                 if (!cell->visited) continue;
-                step_img->rows[cell->row][cell->col].red = 255;
-                step_img->rows[cell->row][cell->col].green = 255;
-                step_img->rows[cell->row][cell->col].blue = 255;
-                if (current && (2 * r + 1) == (long)current->row && (2 * c + 1) == (long)current->col) {
-                    step_img->rows[cell->row][cell->col].red = 255;
-                    step_img->rows[cell->row][cell->col].green = 0;
-                    step_img->rows[cell->row][cell->col].blue = 0;
+                step_img->rows[cell_row][cell_col].red = 255;
+                step_img->rows[cell_row][cell_col].green = 255;
+                step_img->rows[cell_row][cell_col].blue = 255;
+                if (current && (2 * r + 1) == (long)current_row && (2 * c + 1) == (long)current_col) {
+                    step_img->rows[cell_row][cell_col].red = 255;
+                    step_img->rows[cell_row][cell_col].green = 0;
+                    step_img->rows[cell_row][cell_col].blue = 0;
                 }
                 for (struct list_node* path = cell->paths.start; path != NULL; path = path->next) {
-                    long row = (long) path->cell->row + ((long)cell->row - (long)path->cell->row) / 2;
-                    long col = (long) path->cell->col + ((long)cell->col - (long)path->cell->col) / 2;
+                    unsigned long path_row = path->cell->coords[0] * 2 + 1;
+                    unsigned long path_col = path->cell->coords[1] * 2 + 1;
+                    long row = (long) path_row + ((long)cell_row - (long)path_row) / 2;
+                    long col = (long) path_col + ((long)cell_col - (long)path_col) / 2;
                     step_img->rows[row][col].red = 255;
                     step_img->rows[row][col].green = 255;
                     step_img->rows[row][col].blue = 255;
@@ -410,9 +441,9 @@ int main(const int argc, const char** argv) {
 
     struct maze* maze;
     if (write_steps_prefix == NULL) {
-        maze = gen_maze_4(args.rows, args.cols, &relocate, args.limit, NULL);
+        maze = gen_maze_4(args.rows, args.cols, args.limit, NULL);
     } else {
-        maze = gen_maze_4(args.rows, args.cols, &relocate, args.limit, &write_step);
+        maze = gen_maze_4(args.rows, args.cols, args.limit, &write_step);
     }
 
     if (strcmp("png", args.out_format) == 0)

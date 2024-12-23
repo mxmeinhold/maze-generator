@@ -147,25 +147,13 @@ struct maze* gen_maze_3d_6(unsigned long rows, unsigned long cols, unsigned long
 
 // generate a 2d maze with 4-connected neighbors
 // i.e. any 2 cells who's coords differ by 1 and only 1 in 1 and only 1 dimension are neighbors
-struct maze* gen_maze_4(unsigned long rows, unsigned long cols, void (*relocate)(struct cell*), unsigned long limit, void (*write_step)(const struct maze*, const struct cell*, unsigned int)) {
+struct maze* gen_maze_4(unsigned long rows, unsigned long cols, unsigned long limit, void (*write_step)(const struct maze*, const struct cell*, unsigned int)) {
     // Init a grid
     unsigned long dims_array[] = {rows, cols};
     struct maze* out = alloc_maze(2, dims_array);
 
     // Link cells with walls
     link_neighs(out);
-
-    // Assign row and col for printing
-    // TODO
-    unsigned long coords[2];
-    for (coords[0] = 0; coords[0] < rows; coords[0]++) {
-        for (coords[1] = 0; coords[1] < cols; coords[1]++) {
-            struct cell* new = get_cell(out, coords);
-            new->row = new->coords[0];
-            new->col = new->coords[1];
-            relocate(new);// Ugh TODO
-        }
-    }
 
     // Create a maze starting from a random cell
     // TODO save and return this? something something the maze is a tree?

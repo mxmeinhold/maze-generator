@@ -35,8 +35,8 @@ struct cell {
     struct linked_list walls;
     struct linked_list paths;
     unsigned long* coords;
-    unsigned long row;
-    unsigned long col;
+    //unsigned long row;
+    //unsigned long col;
     short num_wall;
     short num_path;
     char visited;
@@ -106,13 +106,11 @@ struct maze* gen_maze_3d_6(unsigned long rows, unsigned long cols, unsigned long
  * Args:
  * * rows: The number of rows in the maze
  * * cols: The number of columns in the maze
- * * relocate: A function to remap a cell's row and column. This is mostly for
- *             convenience for rendering purposes
  * * limit: The limit on the number of iterations while generating the path
  *
  * Return: An allocated maze pointer. Deallocate using `clean_maze()`
  */
-struct maze* gen_maze_4(unsigned long rows, unsigned long cols, void (*relocate)(struct cell*), unsigned long limit, void (*write_step)(const struct maze*, const struct cell*, unsigned int));
+struct maze* gen_maze_4(unsigned long rows, unsigned long cols, unsigned long limit, void (*write_step)(const struct maze*, const struct cell*, unsigned int));
 
 /**
  * Build a maze from a given starting node.
