@@ -32,13 +32,13 @@ struct maze {
 };
 
 struct cell {
+    struct linked_list walls;
+    struct linked_list paths;
+    unsigned long* coords;
     unsigned long row;
     unsigned long col;
-    unsigned long* coords;
     short num_wall;
-    struct linked_list walls;
     short num_path;
-    struct linked_list paths;
     char visited;
 };
 
