@@ -27,9 +27,9 @@ int main(int argc, char** argv) {
     struct img img;
     img.height = rows;
     img.width = cols;
-    img.rows = calloc(sizeof(struct pixel*), (size_t)img.height);
+    img.rows = calloc((size_t)img.height, sizeof(struct pixel*));
     for (int r = 0; r < img.height; r++) {
-        img.rows[r] = calloc(sizeof(struct pixel), (size_t)img.width);
+        img.rows[r] = calloc((size_t)img.width, sizeof(struct pixel));
         for (int c = 0; c < img.width; c++) {
             ch = fgetc(file);
 

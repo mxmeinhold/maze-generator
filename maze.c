@@ -254,9 +254,9 @@ void write_maze_png(const struct maze* maze, const struct cell* current, const c
     struct img img;
     img.height = (int) (2 * maze->dims_array[0] + 1);
     img.width = (int) (2 * maze->dims_array[1] + 1);
-    img.rows = calloc(sizeof(struct pixel*), (size_t)img.height);
+    img.rows = calloc((size_t)img.height, sizeof(struct pixel*));
     for (int r = 0; r < img.height; r++) {
-        img.rows[r] = calloc(sizeof(struct pixel), (size_t)img.width);
+        img.rows[r] = calloc((size_t)img.width, sizeof(struct pixel));
     }
 
     for (unsigned short r = 0; r < maze->dims_array[0]; r++) {
@@ -293,9 +293,9 @@ void write_maze_text(const struct maze* maze, struct arguments* args) {
 
     int height = (int) (2 * args->rows + 1);
     int width = (int) (2 * args->cols + 1);
-    char** rows = calloc(sizeof(char*), (size_t)height);
+    char** rows = calloc((size_t)height, sizeof(char*));
     for (int r = 0; r < height; r++) {
-        rows[r] = calloc(sizeof(char), (size_t)width);
+        rows[r] = calloc((size_t)width, sizeof(char));
         for (int c = 0; c < width; c++) {
             // It might be a wall. More on that later.
             rows[r][c] = '#';
@@ -330,12 +330,12 @@ void write_maze_text(const struct maze* maze, struct arguments* args) {
 void write_step(const struct maze* maze, const struct cell* current, const unsigned int step) {
     // Init our cache on the first run
     if (!step_img) {
-        step_img = calloc(sizeof(struct img), 1);
+        step_img = calloc(1, sizeof(struct img));
         step_img->height = (int) (2 * maze->dims_array[0] + 1);
         step_img->width = (int) (2 * maze->dims_array[1] + 1);
-        step_img->rows = calloc(sizeof(struct pixel*), (size_t)step_img->height);
+        step_img->rows = calloc((size_t)step_img->height, sizeof(struct pixel*));
         for (int r = 0; r < step_img->height; r++) {
-            step_img->rows[r] = calloc(sizeof(struct pixel), (size_t)step_img->width);
+            step_img->rows[r] = calloc((size_t)step_img->width, sizeof(struct pixel));
         }
 
         // On the first run, generate the whole image

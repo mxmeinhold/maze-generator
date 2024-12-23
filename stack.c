@@ -7,7 +7,7 @@ typedef struct stack {
 }** stack_t;
 
 stack_t new_stack(void) {
-    stack_t stack = calloc(sizeof(struct stack), 1);
+    stack_t stack = calloc(1, sizeof(struct stack));
     *stack = NULL;
     return stack;
 }

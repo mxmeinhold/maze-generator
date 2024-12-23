@@ -8,7 +8,7 @@ static void shuffle(struct linked_list* list) {
     for (struct list_node* node = list->start; node != NULL; node = node->next) size++;
 
     if (size > 0) {
-        struct list_node** array = calloc(sizeof(struct list_node*), size);
+        struct list_node** array = calloc(size, sizeof(struct list_node*));
         size_t i = 0;
         for (struct list_node* node = list->start; node != NULL; node = node->next) {
             array[i++] = node;
@@ -43,10 +43,10 @@ static void shuffle(struct linked_list* list) {
 struct cell** alloc_dim(unsigned dims, unsigned long* dims_array) {
     if (dims == 0) {
         // Init a node
-        struct cell* new = calloc(sizeof(struct cell), 1);
+        struct cell* new = calloc(1, sizeof(struct cell));
         return (struct cell**) new;
     } else {
-        struct cell** this = calloc(sizeof(struct cell**), dims_array[0]);
+        struct cell** this = calloc(dims_array[0], sizeof(struct cell**));
         for (unsigned long i = 0; i < dims_array[0]; i++) {
             this[i] = (struct cell*)alloc_dim(dims - 1, dims_array + 1);
         }
@@ -58,7 +58,7 @@ struct cell** alloc_dim(unsigned dims, unsigned long* dims_array) {
 struct maze* alloc_maze(unsigned dims, unsigned long* dims_array) {
     struct maze* out = malloc(sizeof(struct maze));
     out->dims = dims;
-    out->dims_array = calloc(sizeof(unsigned long), dims);
+    out->dims_array = calloc(dims, sizeof(unsigned long));
     for (unsigned d = 0; d < dims; d++) out->dims_array[d] = dims_array[d];
     out->maze = (struct cell***)alloc_dim(dims, dims_array);
     return out;
@@ -79,14 +79,14 @@ struct cell* get_cell(struct maze* maze, unsigned long* coords) {
 // Neighbors are defined by:
 // Any two cells who's coordinates differ by exactly 1 in exactly 1 dimension are neighbors.
 void link_neighs(struct maze* maze) {
-    unsigned long* coords = calloc(sizeof(unsigned long), maze->dims);
+    unsigned long* coords = calloc(maze->dims, sizeof(unsigned long));
     struct cell* cell;
     struct cell* other;
     while (1) {
         cell = get_cell(maze, coords);
 
         // Set coords
-        cell->coords = calloc(sizeof(unsigned long), maze->dims);
+        cell->coords = calloc(maze->dims, sizeof(unsigned long));
         for (unsigned c = 0; c < maze->dims; c++) cell->coords[c] = coords[c];
 
         // Link neighbors
